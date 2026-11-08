@@ -24,6 +24,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     UV_LINK_MODE=copy
 
+# 供 entrypoint 使用：首次启动时以该用户身份生成 git 用的 SSH 密钥
+ENV DEV_USER=${USERNAME} \
+    DEV_UID=${UID}
+
 # ---- 基础工具链 ----------------------------------------------------------
 # build-essential + pkg-config + libssl-dev：绝大多数 crate 的编译前置
 # clang + mold：比默认 ld 快数倍的链接器组合

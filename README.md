@@ -8,6 +8,7 @@
 - **uid/gid 与宿主机一致**：挂载目录里写出的文件不会变成数字 uid
 - **镜像与状态分离**：工具链在镜像里，dotfiles / 缓存 / 数据在挂载卷里，重建镜像不丢
 - **资源硬上限**：`--memory`、`--cpus`、`--pids-limit` 超限只杀容器内进程
+- **`--init` 与日志轮转**：tini 回收僵尸进程，json-file 日志限制为 10m × 3
 - **预装工具链**：zsh、tmux、git、uv、rustup、clang+mold、graphviz、Noto CJK 字体
 
 ## 要求
@@ -60,7 +61,9 @@ VS Code 中执行 `Remote-SSH: Connect to Host` → `dev`。
 | `MEM` | `32g` | 内存上限 |
 | `CPUS` | `8` | CPU 配额 |
 | `SHM` | `2g` | `/dev/shm` 大小 |
-| `PIDS` | `512` | 进程数上限 |
+| `PIDS` | `1024` | 进程/线程数上限 |
+| `LOG_MAX_SIZE` | `10m` | 单个日志文件上限 |
+| `LOG_MAX_FILE` | `3` | 日志文件保留个数 |
 | `HOME_MOUNT` | `$HOME` | 挂载到容器内同路径 |
 | `DATA_MOUNT` | `/data/$USER` 或 `$HOME/work` | 数据目录，挂载到容器内同路径 |
 
@@ -96,10 +99,23 @@ run.sh          构建、启动、打印连接配置
 - 代理地址不写入镜像，`run.sh` 通过 `-e http_proxy` 等透传宿主机环境变量
 - 若数据盘为 HDD，建议将 `target/`、`.venv` 保留在 SSD 上的家目录
 
+### Git 凭据
+
+首次启动时 `entrypoint.sh` 在容器内生成一把独立的 ed25519 密钥，公钥打印在 `docker logs` 里：
+
+```bash
+docker logs dev | sed -n '/ssh-ed25519/p'
+```
+
+把它加到 GitHub 的 `Settings → SSH keys` 即可 `git clone` 私有仓库。容器不挂载宿主机的 `~/.ssh`，宿主机私钥不会进入容器。密钥位于挂载的家目录，重建容器后仍在。
+
 ## 限制
 
 - `docker` 组等价于 root，组内成员可通过挂载宿主机根目录获得完整权限。用户间隔离依赖组成员控制，不是机制隔离；需要机制隔离请使用 rootless Podman
 - 容器不隐藏宿主机上的进程，`ps` 可见容器内所有进程
+- **没有 systemd**：PID 1 是 sshd，`systemctl`、`service`、`cron` 均不可用，容器内无法运行常驻服务
+- **没有 sudo**：缺少系统包时需改 `Dockerfile` 重建，或 `docker exec -u root` 临时安装（重建后丢失）
+- **没有 GUI**：图形界面程序需要 X11 转发
 - 面向开发用途，不适用于对外提供服务
 
 ## License

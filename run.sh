@@ -7,7 +7,8 @@
 #   ./run.sh --rm       删除容器（数据在挂载目录里，不受影响）
 #
 # 全部参数都可用同名环境变量覆盖：
-#   NAME IMAGE SSH_PORT MEM CPUS SHM PIDS HOME_MOUNT DATA_MOUNT
+#   NAME IMAGE SSH_PORT BIND_ADDR MEM CPUS SHM PIDS
+#   LOG_MAX_SIZE LOG_MAX_FILE HOME_MOUNT DATA_MOUNT
 #
 # 例：MEM=16g CPUS=4 ./run.sh
 set -euo pipefail
@@ -20,7 +21,9 @@ BIND_ADDR=${BIND_ADDR:-127.0.0.1}
 MEM=${MEM:-32g}       # 硬上限：容器内用满即 OOM-kill，不影响整机
 CPUS=${CPUS:-8}
 SHM=${SHM:-2g}        # 默认 64M 会让 cargo 并行编译和 ML 数据加载炸掉
-PIDS=${PIDS:-512}
+PIDS=${PIDS:-1024}    # 多进程 Python 与并行编译需要比 512 更多的线程
+LOG_MAX_SIZE=${LOG_MAX_SIZE:-10m}
+LOG_MAX_FILE=${LOG_MAX_FILE:-3}
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 UNAME="$(id -un)"
@@ -60,7 +63,9 @@ else
   docker run -d \
     --name "${NAME}" \
     --restart unless-stopped \
+    --init \
     --hostname dev \
+    --log-opt "max-size=${LOG_MAX_SIZE}" --log-opt "max-file=${LOG_MAX_FILE}" \
     --memory="${MEM}" --memory-swap="${MEM}" \
     --cpus="${CPUS}" --pids-limit="${PIDS}" --shm-size="${SHM}" \
     -p "${BIND_ADDR}:${SSH_PORT}:22" \
