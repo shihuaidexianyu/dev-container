@@ -35,7 +35,7 @@ ENV DEV_USER=${USERNAME} \
 # fonts-noto-cjk：缺了它 matplotlib 的中文标签会变成豆腐块，数值检查也查不出来
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl git openssh-server \
-      tmux zsh less vim-tiny procps tzdata \
+      tmux zsh less vim man-db btop procps tzdata \
       build-essential pkg-config libssl-dev clang mold \
       graphviz fonts-noto-cjk \
     && ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \

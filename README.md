@@ -9,7 +9,7 @@
 - **镜像与状态分离**：工具链在镜像里，dotfiles / 缓存 / 数据在挂载卷里，重建镜像不丢
 - **资源硬上限**：`--memory`、`--cpus`、`--pids-limit` 超限只杀容器内进程
 - **`--init` 与日志轮转**：tini 回收僵尸进程，json-file 日志限制为 10m × 3
-- **预装工具链**：zsh、tmux、git、uv、rustup、clang+mold、graphviz、Noto CJK 字体
+- **预装工具链**：zsh、tmux、git、vim、btop、uv、rustup、clang+mold、graphviz、Noto CJK 字体
 
 ## 要求
 
